@@ -1,0 +1,8 @@
+FILE                  | DESCRIPTION                     | LICENSE | SOURCE
+--------------------- | ------------------------------- | ------- | ------
+custom.css            | Manual css                      | -       | self made
+custom.js             | Misc JavaScript functions       | -       | self made
+dbs.css               | Bootstrap theme stylesheet      | MIT     | https://github.com/AnnMarieW/dash-bootstrap-templates?tab=readme-ov-file
+default_structure.png | Default molecular structure img | -       | self made
+SANDSTONE.css         | Bootstrap theme stylesheet      | MIT     | https://github.com/AnnMarieW/dash-bootstrap-templates?tab=readme-ov-file
+SLATE.css             | Bootstrap theme stylesheet      | MIT     | https://github.com/AnnMarieW/dash-bootstrap-templates?tab=readme-ov-file

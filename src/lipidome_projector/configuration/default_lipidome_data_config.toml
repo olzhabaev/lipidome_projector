@@ -1,0 +1,33 @@
+[[datasets]]
+name = "Drosophila"
+abundances_csv_path = "datasets/drosophila_abundances.csv"
+lipidome_features_csv_path = "datasets/drosophila_features.csv"
+fa_constraints_csv_path = "datasets/drosophila_fa.csv"
+lcb_constraints_csv_path = "datasets/drosophila_lcb.csv"
+description = """CARVALHO, Maria, et al. \
+    Effects of diet and development on the Drosophila lipidome. \
+    Molecular systems biology, 2012, 8. Jg., Nr. 1, S. 600.
+"""
+
+[[datasets]]
+name = "Yeast"
+abundances_csv_path = "datasets/yeast_abundances.csv"
+lipidome_features_csv_path = "datasets/yeast_features.csv"
+fa_constraints_csv_path = "datasets/yeast_fa.csv"
+lcb_constraints_csv_path = "datasets/yeast_lcb.csv"
+description = """EJSING, Christer S., et al. \
+    Global analysis of the yeast lipidome by quantitative \
+    shotgun mass spectrometry. Proceedings of the National \
+    Academy of Sciences, 2009, 106. Jg., Nr. 7, S. 2136-2141.
+"""
+
+[[datasets]]
+name = "LAMP3"
+abundances_csv_path = "datasets/lamp3_abundances.csv"
+lipidome_features_csv_path = "datasets/lamp3_features.csv"
+fa_constraints_csv_path = "datasets/lamp3_fa.csv"
+lcb_constraints_csv_path = "datasets/lamp3_lcb.csv"
+description = """LUNDING, Lars P., et al. LAMP3 deficiency \
+    affects surfactant homeostasis in mice. \
+    PLoS Genetics, 2021, 17. Jg., Nr. 6, S. e1009619.
+"""

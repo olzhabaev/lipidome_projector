@@ -1,0 +1,6 @@
+type = "in_memory_db_df"
+name = "LMSD_SL_IM"
+db_path = "database/database.zip"
+vectors_2d_path = "database/vectors_2d.zip"
+vectors_3d_path = "database/vectors_3d.zip"
+smiles_path = "database/smiles.zip"

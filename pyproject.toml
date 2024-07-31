@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lipidome-projector"
+version = "0.0.1"
+description = "Software for a vector-space-based visualization of lipidome data."
+authors = [
+    {name = "Timur Olzhabaev", email = "timur.olzhabaev@uni-hamburg.de"},
+    {name = "Lukas Müller", email = "lmueller@fz-borstel.de"},
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dash",
+    "dash-ag-grid",
+    "dash-bootstrap-components",
+    "dash-bootstrap-templates",
+    "dash-split",
+    "gensim",
+    "numpy",
+    "pandas",
+    "opentsne",
+    "plotly",
+    "pygoslin",
+    "rdkit",
+    "scikit-learn",
+    "scipy==1.12.0",
+    "umap-learn",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"lipidome_projector.configuration" = ["*.toml"]
+"lipidome_projector.data.database" = ["*.zip"]
+"lipidome_projector.data.datasets" = ["*.csv"]
+"lipidome_projector.assets" = ["*"]
+"lipidome_projector.assets.manual_tour" = ["*"]
+
+[project.scripts]
+lipidome_projector = "lipidome_projector.main:main"
