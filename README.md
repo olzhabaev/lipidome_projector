@@ -27,6 +27,6 @@ The databases used for the computation of the included lipid vector space are:
 The example dataset projections are derived from data obtained from the following publications:
 
 - Drosophila: "CARVALHO, Maria, et al. Effects of diet and development on the Drosophila lipidome. Molecular systems biology, 2012, 8. Jg., Nr. 1, S. 600."
-- Yeat: "EJSING, Christer S., et al. Global analysis of the yeast lipidome by quantitative shotgun mass spectrometry. Proceedings of the National Academy of Sciences, 2009, 106. Jg., Nr. 7, S. 2136-2141."
+- Yeast: "EJSING, Christer S., et al. Global analysis of the yeast lipidome by quantitative shotgun mass spectrometry. Proceedings of the National Academy of Sciences, 2009, 106. Jg., Nr. 7, S. 2136-2141."
 - LAMP3: "LUNDING, Lars P., et al. LAMP3 deficiency affects surfactant homeostasis in mice. PLoS Genetics, 2021, 17. Jg., Nr. 6, S. e1009619."
 
