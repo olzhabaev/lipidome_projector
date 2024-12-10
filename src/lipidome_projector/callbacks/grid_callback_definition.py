@@ -20,9 +20,9 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 def reg_grid_callbacks_python(fe: FrontEnd, col_names: ColNames) -> None:
     @callback(
-        Output(fe.lipidome_grid.element_id, "columnState"),
-        Output(fe.difference_grid.element_id, "columnState"),
-        Output(fe.log2fc_grid.element_id, "columnState"),
+        Output(fe.lipidome_grid.element_id, "columnState", allow_duplicate=True),
+        Output(fe.difference_grid.element_id, "columnState", allow_duplicate=True),
+        Output(fe.log2fc_grid.element_id, "columnState", allow_duplicate=True),
         Input(fe.lipid_grid.element_id, "virtualRowData"),
         State(fe.lipid_grid.element_id, "rowData"),
         State(fe.lipid_grid.element_id, "columnDefs"),

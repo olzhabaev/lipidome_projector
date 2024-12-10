@@ -94,7 +94,7 @@ def main() -> None:
     use_reloader: bool = False
 
     app.run_server(
-        debug=debug, host="localhost", port=8050, use_reloader=use_reloader
+        debug=debug, host="0.0.0.0", port=8050, use_reloader=use_reloader
     )
 
 

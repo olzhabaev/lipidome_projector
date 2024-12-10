@@ -33,7 +33,7 @@ from dash.development.base_component import Component
 from dash_split import Split
 from dash.exceptions import PreventUpdate
 
-from embedding_visualization.colors import rgb_str_list_to_hex
+from embedding_visualization.colors import rgb_str_to_hex
 
 from lipidome_projector.graph.lipidome_plotly_scatter import gen_empty_plot
 
@@ -107,7 +107,28 @@ class Graph(ComponentWrapper):
             id=self.element_id,
             responsive=True,
             figure=gen_empty_plot(),
-            config={"displaylogo": False},
+            config={
+                "editable": True,
+                "edits": {
+                    "annotationPosition": False,
+                    "annotationTail": True,
+                    "annotationText": True,
+                    "axisTitleText": False,
+                    "colorbarPosition": False,
+                    "colorbarTitleText": False,
+                    "legendPosition": True,
+                    "legendText": False,
+                    "shapePosition": True,
+                    "titleText": False,
+                },
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "svg",
+                    "height": 800,
+                    "width": 800,
+                    "scale": 1,
+                },
+            },
             style={"height": "100%"},
         )
 
@@ -175,10 +196,27 @@ class Tooltip(ComponentWrapper):
         return tooltip
 
 
+@dataclass(frozen=True)
+class TriggerDiv(ComponentWrapper):
+    element_id: str
+
+    def gen_component(self) -> html.Div:
+        trigger_div: html.Div = html.Div(
+            id=self.element_id, style={"display": "none"}
+        )
+
+        return trigger_div
+
+
 # CONCRETE COMPONENT CLASSES --------------------------------------------------
 
 
 # -- MISC. COMPONENTS ---------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PreventFigureRefresh(TriggerDiv):
+    element_id: str = "prevent-figure-refresh"
 
 
 @dataclass(frozen=True)
@@ -242,7 +280,6 @@ class FullScreenSizeStore(ComponentWrapper):
         )
 
 
-@dataclass(frozen=True)
 class FullscreenModal(ComponentWrapper):
     element_id: str
     content_type: type[Component]
@@ -251,14 +288,29 @@ class FullscreenModal(ComponentWrapper):
     is_open: bool = False
 
     def gen_component(self) -> dbc.Modal:
+        if self.content_type == dcc.Graph:
+            modal_content = self.content_type(
+                id=self.content_id,
+                responsive=True,
+                figure=gen_empty_plot(),
+                config={
+                    "displaylogo": False,
+                    "toImageButtonOptions": {
+                        "format": "svg",
+                        "width": 800,
+                        "height": 800,
+                    },
+                },
+                style={"height": "100%"},
+            )
+        else:
+            modal_content = self.content_type(
+                id=self.content_id, style={"height": "100%"}
+            )
         fullscreen_modal: dbc.Modal = dbc.Modal(
             [
                 dbc.ModalHeader(dbc.ModalTitle(self.title)),
-                dbc.ModalBody(
-                    self.content_type(
-                        id=self.content_id, style={"height": "100%"}
-                    )
-                ),
+                dbc.ModalBody(modal_content),
             ],
             id=self.element_id,
             fullscreen=True,
@@ -375,17 +427,6 @@ class StoreInit(ComponentWrapper):
 @dataclass(frozen=True)
 class LipidomeGraph(Graph):
     element_id: str = "lipidome-graph"
-
-    def gen_component(self):
-        graph = dcc.Graph(
-            id=self.element_id,
-            responsive=True,
-            figure=gen_empty_plot(),
-            config={"displaylogo": False},
-            style={"height": "100%"},
-        )
-
-        return graph
 
 
 @dataclass(frozen=True)
@@ -553,6 +594,7 @@ class SettingsAccordion(ComponentWrapper):
         about_button: Component,
         figure_download_settings: Component,
         manual_tour_component: Component,
+        session_download: Component,
     ) -> dbc.Accordion:
         settings_accordion: dbc.Accordion = dbc.Accordion(
             [
@@ -561,6 +603,8 @@ class SettingsAccordion(ComponentWrapper):
                         upload_setup_button,
                         html.Br(),
                         default_dataset_button,
+                        html.Br(),
+                        session_download,
                         html.Br(),
                     ],
                     id=self.data_setup_id,
@@ -696,7 +740,7 @@ class DefaultDatasetModal(ComponentWrapper):
 @dataclass(frozen=True)
 class UploadSetupButton(Button):
     element_id: str = "upload-setup-button"
-    text: str = "Upload Setup"
+    text: str = "Dataset Upload Setup"
 
 
 @dataclass(frozen=True)
@@ -993,7 +1037,7 @@ class FigureDownloadSettings(ComponentWrapper):
                 {"label": "WebP", "value": "webp"},
                 {"label": "SVG", "value": "svg"},
             ],
-            value="png",
+            value="svg",
         )
 
         height_input: dcc.Input = dcc.Input(
@@ -1263,8 +1307,10 @@ class SetColorComponent(ComponentWrapper):
         def _generate_color_scale_divs(
             color_scale_name: str, colors: list[str]
         ) -> list[html.Div]:
-            if colors[0].startswith("rgb"):
-                colors = rgb_str_list_to_hex(colors)
+            colors: list[str] = [
+                color if color.startswith("#") else rgb_str_to_hex(color)
+                for color in colors
+            ]
             color_div_list = [
                 html.Div(
                     children=color_scale_name,
@@ -1806,6 +1852,16 @@ class TourComponent(ComponentWrapper):
                 "className",
                 allow_duplicate=True,
             ),
+            Output(
+                self.manual_tour_component.button_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
+            Output(
+                self.manual_tour_component.dropdown_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
             Output(self.next_.popover_id, "is_open", allow_duplicate=True),
             Output(self.popover_id, "is_open", allow_duplicate=True),
             Output(self.next_.popover_id, "className", allow_duplicate=True),
@@ -1820,21 +1876,44 @@ class TourComponent(ComponentWrapper):
             close_button: int | None,
             start_tour: int | None,
             is_open: bool,
-        ) -> tuple[str | NoUpdate, bool, bool, str]:
+        ) -> tuple[
+            str | NoUpdate, bool | NoUpdate, bool | NoUpdate, bool, bool, str
+        ]:
             next_popover_width_class = (
                 "popover"
                 if self.next_.image is None
                 else "popover popover-max-width"
             )
             if self.close_button_id in ctx.triggered_id:
-                return no_update, False, False, next_popover_width_class
+                return (
+                    no_update,
+                    False,
+                    False,
+                    False,
+                    False,
+                    next_popover_width_class,
+                )
             elif self.next_button_id in ctx.triggered_id:
-                return no_update, True, False, next_popover_width_class
+                return (
+                    no_update,
+                    no_update,
+                    no_update,
+                    True,
+                    False,
+                    next_popover_width_class,
+                )
             elif (
                 is_open
                 and self.manual_tour_component.button_id in ctx.triggered_id
             ):
-                return "loading", no_update, False, next_popover_width_class
+                return (
+                    "loading",
+                    True,
+                    True,
+                    no_update,
+                    False,
+                    next_popover_width_class,
+                )
             raise PreventUpdate
 
         clientside_callback(
@@ -1929,6 +2008,16 @@ class TourComponentStart(TourComponent):
     def register_callback(self) -> None:
 
         @callback(
+            Output(
+                self.manual_tour_component.button_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
+            Output(
+                self.manual_tour_component.dropdown_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
             Output(self.next_.popover_id, "is_open", allow_duplicate=True),
             Output(self.popover_id, "is_open", allow_duplicate=True),
             Input(self.manual_tour_component.button_id, "n_clicks"),
@@ -1942,14 +2031,14 @@ class TourComponentStart(TourComponent):
             next_button: int | None,
             close_button: int | None,
             chosen_tour: str,
-        ) -> tuple[bool, bool]:
+        ) -> tuple[bool | NoUpdate, bool | NoUpdate, bool, bool]:
             if chosen_tour == self.tour_name:
                 if self.close_button_id in ctx.triggered_id:
-                    return False, False
+                    return False, False, False, False
                 elif self.manual_tour_component.button_id in ctx.triggered_id:
-                    return False, True
+                    return True, True, False, True
                 elif self.next_button_id in ctx.triggered_id:
-                    return True, False
+                    return no_update, no_update, True, False
             else:
                 raise PreventUpdate
 
@@ -2014,12 +2103,24 @@ class TourComponentEnd(TourComponent):
             return True
 
         @callback(
+            Output(
+                self.manual_tour_component.button_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
+            Output(
+                self.manual_tour_component.dropdown_id,
+                "disabled",
+                allow_duplicate=True,
+            ),
             Output(self.popover_id, "is_open", allow_duplicate=True),
             Input(self.close_button_id, "n_clicks"),
             prevent_initial_call=True,
         )
-        def toggle_popover(close_button: int | None) -> bool:
-            return False
+        def toggle_popover(
+            close_button: int | None,
+        ) -> tuple[bool, bool, bool]:
+            return False, False, False
 
         clientside_callback(
             ClientsideFunction(
@@ -2092,7 +2193,9 @@ class TourHandler:
 
     def _get_tour_end(self, tour_name: str) -> TourComponent:
         return TourComponentEnd(
-            settings_accordion=self.settings_accordion, tour_name=tour_name
+            settings_accordion=self.settings_accordion,
+            tour_name=tour_name,
+            manual_tour_component=self.manual_tour_component,
         )
 
     @staticmethod
@@ -2116,3 +2219,39 @@ class TourHandler:
     def _set_target(tour_steps: list[TourComponent]) -> None:
         for tour_step in tour_steps:
             tour_step.set_target()
+
+
+@dataclass(frozen=True)
+class SessionDownloadComponent(ComponentWrapper):
+    element_id: str = "session-download-component"
+    button_id: str = "session-download-button"
+    upload_id: str = "session-upload"
+
+    def gen_component(self) -> html.Div:
+        download_button: dbc.Button = dbc.Button(
+            "Download Session State", id=self.button_id
+        )
+
+        upload_style: dict[str, str] = {
+            "width": "50%",
+            "height": "40px",
+            "lineHeight": "20px",
+            "borderWidth": "1px",
+            "borderStyle": "dashed",
+            "borderRadius": "5px",
+            "textAlign": "center",
+            "margin": "10px",
+        }
+
+        return html.Div(
+            [
+                download_button,
+                html.Br(),
+                dcc.Upload(
+                    id=self.upload_id,
+                    children=["Upload Session State"],
+                    style=upload_style,
+                ),
+                dcc.Download(id=self.element_id),
+            ],
+        )

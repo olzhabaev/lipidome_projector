@@ -20,8 +20,13 @@ logger: logging.Logger = logging.getLogger(__name__)
 # TODO: Extract tour handling.
 # TODO: Refactor to a more nested composition.
 
+
 @dataclass(frozen=True)
 class FrontEnd:
+
+    prevent_figure_refresh: fec.PreventFigureRefresh = field(
+        default_factory=fec.PreventFigureRefresh
+    )
 
     split_vertical: fec.SplitVertical = field(
         default_factory=fec.SplitVertical
@@ -191,6 +196,10 @@ class FrontEnd:
 
     tour_handler: fec.TourHandler = field(init=False)
 
+    session_download: fec.SessionDownloadComponent = field(
+        default_factory=fec.SessionDownloadComponent
+    )
+
     def __post_init__(self):
         object.__setattr__(
             self,
@@ -267,7 +276,7 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.upload_abundances.element_id,
-                    description="First a file with abundances must be uploaded.",
+                    description="First, a file with abundances must be uploaded.",
                     action=fec.TourStepAction(
                         target_id=self.upload_abundances.element_id,
                         target_prop="contents",
@@ -305,7 +314,6 @@ class FrontEnd:
                     action=fec.TourStepAction(
                         target_id=self.upload_lipidome_features.element_id,
                         target_prop="contents",
-                        # value=f"data:text/csv;base64,{base64.b64encode(open(Path.cwd() / 'data' / 'datasets' / 'yeast_features.csv', 'rb').read()).decode('ascii')}",
                         value=f"data:text/csv;base64,{base64.b64encode(
                             files("lipidome_projector.data").joinpath(
                                 "datasets/yeast_features.csv"
@@ -336,7 +344,7 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.upload_fa_constraints.element_id,
-                    description="Then, two constraint failes need to be uploaded. The first concerns the fatty acyls.",
+                    description="Then, two constraint files need to be uploaded. The first concerns the fatty acyls.",
                     action=fec.TourStepAction(
                         target_id=self.upload_fa_constraints.element_id,
                         target_prop="contents",
@@ -367,7 +375,7 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.upload_lcb_constraints.element_id,
-                    description="The second constraints the long chain bases.",
+                    description="The second concerns the long chain bases.",
                     action=fec.TourStepAction(
                         target_id=self.upload_lcb_constraints.element_id,
                         target_prop="contents",
@@ -426,7 +434,7 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.lipidome_grid.element_id,
-                    description="This is the lipidome grid. Here you can see the lipidomes in a table and all the lipids, occuring in them with their abundances.",
+                    description="This is the lipidome grid. Here you can see the lipidomes in a table and all the lipids, occurring in them with their abundances.",
                     action=fec.TourStepAction(
                         target_id=self.grid_tabs.element_id,
                         target_prop="value",
@@ -435,8 +443,8 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.lipidome_grid.element_id,
-                    description="You can select some of the lipidomes and make some adjustments or run some operations on them. Learn more about this in the 'Data Operations' and 'Graph Settings' tour. "
-                    "Also note, that each column of the grid has a filter.",
+                    description="You can select some of the lipidomes and make some adjustments or run some operations on them. Learn more about this in the 'Data Operations' and 'Graph Settings' tours. "
+                    "Also note that each column of the grid has a filter.",
                     action=fec.TourStepAction(
                         target_id=self.lipidome_grid.element_id,
                         target_prop="selectedRows",
@@ -445,14 +453,14 @@ class FrontEnd:
                 ),
                 fec.TourStep(
                     target=self.lipidome_graph.element_id,
-                    description="You can also select some lipids on the lipidome graph by using the mode bar's select tools.",
+                    description="You can select some lipids on the lipidome graph by using the mode bar's select tools or by simply clicking on them. Another click on them will deselect them.",
                     image=fec.TourStepImage(
                         src="modebar_select.png",
                     ),
                 ),
                 fec.TourStep(
                     target=self.lipidome_graph.element_id,
-                    description="Once selected, the lipids are highlighted in the 'Lipids' tab of the main grid.",
+                    description="Once selected, the lipids are highlighted in the 'Lipids' tab of the main grid and are annotated on the graph.",
                     action=fec.TourStepAction(
                         target_id=self.lipidome_graph.element_id,
                         target_prop="selectedData",
@@ -521,8 +529,17 @@ class FrontEnd:
                     ),
                 ),
                 fec.TourStep(
+                    target=self.lipid_grid.element_id,
+                    description="Likewise, you can select lipids on the lipid grid and see them highlighted and annotated in the lipidome graph.",
+                    action=fec.TourStepAction(
+                        target_id=self.lipid_grid.element_id,
+                        target_prop="selectedRows",
+                        value={"ids": ["Brassicasterol", "Cer 32:1;2"]},
+                    ),
+                ),
+                fec.TourStep(
                     target=self.settings_accordion.element_id,
-                    description="This tab features all of the main functionalities ('Data Setup', 'Graph Settings', 'Data Operations', 'Abundance Chart', 'Representative Structure', 'App Settings' and 'Manual'). Learn more about them in the according tours",
+                    description="This tab features all of the main functionalities ('Data Setup', 'Graph Settings', 'Data Operations', 'Abundance Chart', 'Representative Structure', 'App Settings' and 'Manual'). Learn more about them in the corresponding tours",
                     action=fec.TourStepAction(
                         target_id=self.lipidome_graph.element_id,
                         target_prop="hoverData",
@@ -579,7 +596,7 @@ class FrontEnd:
                     action=fec.TourStepAction(
                         target_id=self.split_horizontal.element_id,
                         target_prop="sizes",
-                        value=(70, 30),
+                        value=(60, 40),
                     ),
                 ),
                 fec.TourStep(
@@ -932,6 +949,11 @@ class FrontEnd:
         )
 
         # components
+
+        prevent_figure_refresh: Component = (
+            self.prevent_figure_refresh.get_component()
+        )
+
         fullscreen_size_store: Component = (
             self.fullscreen_size_store.get_component()
         )
@@ -1020,6 +1042,8 @@ class FrontEnd:
 
         delete_component: Component = self.delete_component.get_component()
 
+        session_download: Component = self.session_download.get_component()
+
         settings_accordion: Component = self.settings_accordion.get_component(
             upload_setup_button=upload_setup_button,
             default_dataset_button=default_dataset_button,
@@ -1040,6 +1064,7 @@ class FrontEnd:
             about_button=about_button,
             figure_download_settings=figure_download_settings,
             manual_tour_component=manual_tour_component,
+            session_download=session_download,
         )
 
         lipidome_grid: Component = self.lipidome_grid.get_component(
@@ -1121,6 +1146,7 @@ class FrontEnd:
                 about_modal,
                 fullscreen_size_store,
                 last_deleted_store,
+                prevent_figure_refresh,
                 *tour_components,
             ],
         )

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lipidome-projector"
-version = "0.0.1"
+version = "0.0.2"
 description = "Software for a vector-space-based visualization of lipidome data."
 authors = [
     {name = "Timur Olzhabaev", email = "timur.olzhabaev@uni-hamburg.de"},

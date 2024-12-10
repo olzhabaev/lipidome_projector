@@ -23,7 +23,11 @@ def reg_default_dataset_callbacks_python(
     logger.info("Register default dataset python callbacks.")
 
     @callback(
-        Output(fe.default_dataset_modal.element_id, "is_open"),
+        Output(
+            fe.default_dataset_modal.element_id,
+            "is_open",
+            allow_duplicate=True,
+        ),
         Input(fe.default_dataset_button.element_id, "n_clicks"),
         prevent_initial_call=True,
     )
@@ -34,6 +38,7 @@ def reg_default_dataset_callbacks_python(
         Output(
             fe.default_dataset_modal.dataset_description_div_element_id,
             "children",
+            allow_duplicate=True,
         ),
         Input(fe.default_dataset_modal.selection_dropdown_element_id, "value"),
         prevent_initial_call=True,

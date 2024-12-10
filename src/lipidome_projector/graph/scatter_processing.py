@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 
 from plotly.graph_objects import Figure
+from dash.exceptions import PreventUpdate
 
 from lipid_data_processing.lipidomes.lipidome_dataset import LipidomeDataset
 
@@ -314,51 +315,148 @@ def _gen_lipidome_colormap(
     return lipidome_colormap
 
 
+def select_lipid_grid(
+    col_names: ColNames,
+    selected_rows: dict,
+    selected_data: dict,
+    click_data: dict,
+    lipid_records: list[dict],
+) -> tuple[
+    list[dict],
+    dict[str, list[str]],
+    dict[str, int],
+]:
+    """
+    Select lipids in the grid.
+    :param col_names: Column names.
+    :param selected_rows: Selected rows.
+    :param selected_data: Selected data.
+    :param click_data: Click data.
+    :param lipid_records: Lipid records.
+    :returns: Reordered records, selected lipids, and row index.
+    """
+    already_selected_in_grid: list = (
+        [row[col_names.lipid] for row in selected_rows]
+        if selected_rows
+        else []
+    )
+
+    if click_data:
+        new_point = click_data["points"][0]["customdata"][1]
+        if new_point in already_selected_in_grid:
+            already_selected_in_grid.remove(new_point)
+            click_data = None
+
+    new_selected_on_graph: list = (
+        selected_data["points"] if selected_data is not None else []
+    ) + (click_data["points"] if click_data is not None else [])
+
+    selected_lipids: list[str] = [
+        point["customdata"][1] for point in new_selected_on_graph
+    ] + already_selected_in_grid
+
+    reordered_records: list[dict] = sorted(
+        lipid_records,
+        key=lambda r: r[col_names.lipid] not in selected_lipids,
+    )
+
+    return reordered_records, {"ids": selected_lipids}, {"rowIndex": 0}
+
+
 def add_annotation(
-    clickData: dict, figure_dict: dict, dimensionality: int
+    figure_dict: dict,
+    col_names: ColNames,
+    selected_rows: dict,
+    dimensionality: int,
 ) -> Figure:
-    """Add an annotation to the figure.
-    :param clickData: Click data.
+    """
+    Add annotation to the figure.
     :param figure_dict: Figure dictionary.
-    :param dimensionality: Dimensionality of the figure.
+    :param col_names: Column names.
+    :param selected_rows: Selected rows.
+    :param dimensionality: Dimensionality.
     :returns: Figure with annotation.
     """
+
     figure: Figure = Figure(figure_dict)
 
+    selected_lipids: list = [row[col_names.lipid] for row in selected_rows]
+    selected_lipids_set: set = set(selected_lipids)
+    idx_selected_lipids: list = []
+    for idx, lipid in enumerate(figure["data"][0]["customdata"]):
+        if lipid[1] in selected_lipids_set:
+            idx_selected_lipids.append(idx)
+            selected_lipids_set.remove(lipid[1])
+
+    selected_lipids_x: list = [
+        figure["data"][0]["x"][lipid_idx] for lipid_idx in idx_selected_lipids
+    ]
+    selected_lipids_y: list = [
+        figure["data"][0]["y"][lipid_idx] for lipid_idx in idx_selected_lipids
+    ]
+
+    selected_lipid_names: list = [
+        figure["data"][0]["customdata"][lipid_idx][1]
+        for lipid_idx in idx_selected_lipids
+    ]
     if dimensionality == 2:
-        for point in clickData["points"]:
-            text: str = point["customdata"][1]
+
+        figure_dict["layout"]["annotations"]: list = []
+        figure: Figure = Figure(figure_dict)
+
+        for i, (x, y) in enumerate(zip(selected_lipids_x, selected_lipids_y)):
             figure.add_annotation(
-                ({"x": point["x"], "y": point["y"]}),
-                text=text,
+                x=x,
+                y=y,
+                xref="x",
+                yref="y",
+                text=selected_lipid_names[i],
                 showarrow=True,
-                arrowhead=0,
-                clicktoshow="onoff",
+                captureevents=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor="Black",
                 font={"size": 15},
                 ax=30,
                 ay=-30,
             )
     elif dimensionality == 3:
-        for point in clickData["points"]:
-            text: str = point["customdata"][1]
-            if "annotations" not in figure_dict["layout"]["scene"]:
-                current_annotations = []
-            else:
-                current_annotations = figure_dict["layout"]["scene"][
-                    "annotations"
-                ]
-            figure.update_layout(
-                scene={
-                    "annotations": current_annotations
-                    + [
-                        {
-                            "x": point["x"],
-                            "y": point["y"],
-                            "z": point["z"],
-                            "text": text,
-                        }
-                    ]
-                },
+        figure: Figure = Figure(figure_dict)
+
+        selected_lipids_z: list = [
+            figure["data"][0]["z"][lipid_idx]
+            for lipid_idx in idx_selected_lipids
+        ]
+
+        figure_dict["layout"]["scene"]["annotations"]: list = []
+        figure: Figure = Figure(figure_dict)
+
+        annotations: list = [
+            {
+                "showarrow": True,
+                "x": x,
+                "y": y,
+                "z": z,
+                "text": selected_lipid_names[i],
+                "arrowhead": 2,
+                "arrowsize": 1,
+                "arrowwidth": 2,
+                "captureevents": True,
+                "arrowcolor": "Black",
+                "font": {"size": 15},
+                "ax": 30,
+                "ay": -30,
+            }
+            for i, (x, y, z) in enumerate(
+                zip(
+                    selected_lipids_x,
+                    selected_lipids_y,
+                    selected_lipids_z,
+                )
             )
+        ]
+
+        figure.update_layout(scene={"annotations": annotations})
 
     return figure

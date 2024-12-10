@@ -5,7 +5,7 @@ from lipidome_projector.front_end.front_end_coordination import FrontEnd
 
 def reg_app_settings_callbacks_python(fe: FrontEnd) -> None:
     @callback(
-        Output(fe.about_modal.element_id, "is_open"),
+        Output(fe.about_modal.element_id, "is_open", allow_duplicate=True),
         Input(fe.about_button.element_id, "n_clicks"),
         State(fe.about_modal.element_id, "is_open"),
         prevent_initial_call=True,

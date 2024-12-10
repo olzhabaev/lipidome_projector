@@ -31,7 +31,7 @@ def reg_data_operation_callbacks_python(
     @callback(
         Output(fe.lipidome_grid.element_id, "rowData", allow_duplicate=True),
         Output(fe.grid_tabs.element_id, "value", allow_duplicate=True),
-        Output(fe.lipidome_grid.element_id, "scrollTo"),
+        Output(fe.lipidome_grid.element_id, "scrollTo", allow_duplicate=True),
         Output(fe.problem_modal.element_id, "is_open", allow_duplicate=True),
         Output(fe.problem_modal.body_id, "children", allow_duplicate=True),
         Input(fe.grouping_component.button_id, "n_clicks"),
@@ -120,7 +120,7 @@ def reg_data_operation_callbacks_python(
         Output(fe.log2fc_grid.element_id, "rowData", allow_duplicate=True),
         Output(fe.log2fc_grid.element_id, "columnDefs", allow_duplicate=True),
         Output(fe.grid_tabs.element_id, "value", allow_duplicate=True),
-        Output(fe.grid_tabs.change_tabs_id, "value"),
+        Output(fe.grid_tabs.change_tabs_id, "value", allow_duplicate=True),
         Output(fe.problem_modal.element_id, "is_open", allow_duplicate=True),
         Output(fe.problem_modal.body_id, "children", allow_duplicate=True),
         Input(fe.change_component.button_id, "n_clicks"),
@@ -234,7 +234,7 @@ def reg_data_operation_callbacks_python(
         return {"update": selected_rows}
 
     @callback(
-        Output(fe.lipidome_grid.element_id, "rowTransaction"),
+        Output(fe.lipidome_grid.element_id, "rowTransaction", allow_duplicate=True),
         Input(fe.set_color_component.color_scale_button_id, "n_clicks"),
         State(fe.lipidome_grid.element_id, "selectedRows"),
         State(fe.set_color_component.color_scale_dropdown_id, "value"),
@@ -248,9 +248,10 @@ def reg_data_operation_callbacks_python(
 
         colors: list[str] = getattr(px.colors.qualitative, colorscale)
 
-        colors: list[str] = (
-            colors if colors[0].startswith("#") else rgb_str_to_hex(colors)
-        )
+        colors: list[str] = [
+            color if color.startswith("#") else rgb_str_to_hex(color)
+            for color in colors
+        ]
 
         for row, color in zip(selected_rows, cycle(colors)):
             row[col_names.color] = color

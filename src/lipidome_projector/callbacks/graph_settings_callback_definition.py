@@ -12,6 +12,7 @@ from dash import (
     clientside_callback,
     ClientsideFunction,
     no_update,
+    ctx,
 )
 from dash._callback import NoUpdate
 from plotly.graph_objects import Figure
@@ -25,6 +26,7 @@ from lipidome_projector.graph.scatter_processing import (
     gen_scatter_from_grid_input,
     gen_hover_abundance_chart_and_structure_img,
     add_annotation,
+    select_lipid_grid,
 )
 from lipidome_projector.graph.lipidome_plotly_scatter import gen_empty_plot
 from lipidome_projector.lipidome.col_names import ColNames
@@ -53,6 +55,7 @@ def reg_graph_settings_callbacks_python(
         State(fe.lipidome_grid.element_id, "columnDefs"),
         State(fe.lipid_grid.element_id, "rowData"),
         Input(fe.lipid_grid.element_id, "virtualRowData"),
+        Input(fe.prevent_figure_refresh.element_id, "children"),
         State(fe.lipid_grid.element_id, "columnDefs"),
         State(fe.difference_grid.element_id, "rowData"),
         State(fe.difference_grid.element_id, "columnDefs"),
@@ -76,6 +79,7 @@ def reg_graph_settings_callbacks_python(
         lipidome_column_groups_defs: list[dict],
         lipid_records: list[dict],
         lipid_virtual_records: list[dict],
+        prevent_figure_refresh: str,
         lipid_column_groups_defs: list[dict],
         difference_records: list[dict],
         difference_column_groups_defs: list[dict],
@@ -85,6 +89,9 @@ def reg_graph_settings_callbacks_python(
         log2fc_selected_rows: list[dict],
         theme: str,
     ) -> Figure | dict:
+
+        if ctx.triggered_id == fe.prevent_figure_refresh.element_id:
+            raise PreventUpdate
 
         load_figure_template(theme)
 
@@ -129,9 +136,13 @@ def reg_graph_settings_callbacks_python(
         return figure
 
     @callback(
-        Output(fe.abundance_graph.element_id, "figure"),
-        Output(fe.structure_image.element_id, "src"),
-        Output(fe.structure_image_fullscreen_modal.content_id, "src"),
+        Output(fe.abundance_graph.element_id, "figure", allow_duplicate=True),
+        Output(fe.structure_image.element_id, "src", allow_duplicate=True),
+        Output(
+            fe.structure_image_fullscreen_modal.content_id,
+            "src",
+            allow_duplicate=True,
+        ),
         Input(fe.lipidome_graph.element_id, "hoverData"),
         Input(fe.theme_switch.theme_name, "children"),
         State(fe.lipidome_grid.element_id, "rowData"),
@@ -192,15 +203,23 @@ def reg_graph_settings_callbacks_python(
         )
 
     @callback(
-        Output(fe.linear_scaling.factor_element_id, "min"),
-        Output(fe.linear_scaling.factor_element_id, "max"),
-        Output(fe.linear_scaling.factor_element_id, "value"),
-        Output(fe.linear_scaling.base_element_id, "min"),
-        Output(fe.linear_scaling.base_element_id, "max"),
-        Output(fe.linear_scaling.base_element_id, "value"),
-        Output(fe.min_max_scaling.element_id, "min"),
-        Output(fe.min_max_scaling.element_id, "max"),
-        Output(fe.min_max_scaling.element_id, "value"),
+        Output(
+            fe.linear_scaling.factor_element_id, "min", allow_duplicate=True
+        ),
+        Output(
+            fe.linear_scaling.factor_element_id, "max", allow_duplicate=True
+        ),
+        Output(
+            fe.linear_scaling.factor_element_id, "value", allow_duplicate=True
+        ),
+        Output(fe.linear_scaling.base_element_id, "min", allow_duplicate=True),
+        Output(fe.linear_scaling.base_element_id, "max", allow_duplicate=True),
+        Output(
+            fe.linear_scaling.base_element_id, "value", allow_duplicate=True
+        ),
+        Output(fe.min_max_scaling.element_id, "min", allow_duplicate=True),
+        Output(fe.min_max_scaling.element_id, "max", allow_duplicate=True),
+        Output(fe.min_max_scaling.element_id, "value", allow_duplicate=True),
         Input(fe.sizemode_selection.element_id, "value"),
         Input(fe.lipidome_grid.element_id, "rowData"),
         prevent_initial_call=True,
@@ -276,26 +295,6 @@ def reg_graph_settings_callbacks_python(
         else:
             raise ValueError(f"Sizemode {sizemode} not supported.")
 
-    # TODO Re-activate callback, when annotation persistence is implemented.
-    # @callback(
-    #     Output(fe.lipidome_graph.element_id, "figure", allow_duplicate=True),
-    #     Input(fe.lipidome_graph.element_id, "clickData"),
-    #     State(fe.lipidome_graph.element_id, "figure"),
-    #     State(fe.dimensionality_selection.element_id, "value"),
-    #     prevent_initial_call=True,
-    # )
-    # def annotate_click_data(
-    #     clickData: dict, figure_dict: dict, dimensionality: int
-    # ) -> Figure | NoUpdate:
-    #     if clickData is None:
-    #         return no_update
-
-    #     return add_annotation(
-    #         clickData=clickData,
-    #         figure_dict=figure_dict,
-    #         dimensionality=dimensionality,
-    #     )
-
     clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -317,9 +316,12 @@ def reg_graph_settings_callbacks_python(
             namespace="clientside",
             function_name="trunc_legend_and_add_tooltip",
         ),
-        Output(fe.lipidome_graph.element_id, "className"),
+        Output(
+            fe.lipidome_graph.element_id, "className", allow_duplicate=True
+        ),
         Input(fe.lipidome_graph.element_id, "figure"),
         State(fe.lipidome_graph.element_id, "id"),
+        prevent_initial_call=True,
     )
 
     clientside_callback(
@@ -327,14 +329,27 @@ def reg_graph_settings_callbacks_python(
             namespace="clientside",
             function_name="trunc_legend_and_add_tooltip",
         ),
-        Output(fe.lipidome_graph_fullscreen_modal.content_id, "className"),
+        Output(
+            fe.lipidome_graph_fullscreen_modal.content_id,
+            "className",
+            allow_duplicate=True,
+        ),
         Input(fe.lipidome_graph_fullscreen_modal.content_id, "figure"),
         State(fe.lipidome_graph_fullscreen_modal.content_id, "id"),
+        prevent_initial_call=True,
     )
 
     @callback(
-        Output(fe.abundance_graph_fullscreen_modal.element_id, "is_open"),
-        Output(fe.abundance_graph_fullscreen_modal.content_id, "figure"),
+        Output(
+            fe.abundance_graph_fullscreen_modal.element_id,
+            "is_open",
+            allow_duplicate=True,
+        ),
+        Output(
+            fe.abundance_graph_fullscreen_modal.content_id,
+            "figure",
+            allow_duplicate=True,
+        ),
         Input(fe.abundance_graph_fullscreen_button.element_id, "n_clicks"),
         State(fe.abundance_graph.element_id, "figure"),
         prevent_initial_call=True,
@@ -345,8 +360,16 @@ def reg_graph_settings_callbacks_python(
         return True, figure
 
     @callback(
-        Output(fe.lipidome_graph_fullscreen_modal.element_id, "is_open"),
-        Output(fe.lipidome_graph_fullscreen_modal.content_id, "figure"),
+        Output(
+            fe.lipidome_graph_fullscreen_modal.element_id,
+            "is_open",
+            allow_duplicate=True,
+        ),
+        Output(
+            fe.lipidome_graph_fullscreen_modal.content_id,
+            "figure",
+            allow_duplicate=True,
+        ),
         Input(fe.lipidome_graph_fullscreen_button.element_id, "n_clicks"),
         State(fe.lipidome_graph.element_id, "figure"),
         prevent_initial_call=True,
@@ -357,7 +380,11 @@ def reg_graph_settings_callbacks_python(
         return True, figure
 
     @callback(
-        Output(fe.structure_image_fullscreen_modal.element_id, "is_open"),
+        Output(
+            fe.structure_image_fullscreen_modal.element_id,
+            "is_open",
+            allow_duplicate=True,
+        ),
         Input(fe.structure_image_fullscreen_button.element_id, "n_clicks"),
         prevent_initial_call=True,
     )
@@ -365,53 +392,84 @@ def reg_graph_settings_callbacks_python(
         return True
 
     @callback(
-        Output(fe.lipid_grid.element_id, "rowData"),
-        Output(fe.lipid_grid.element_id, "selectedRows"),
-        Output(fe.lipid_grid.element_id, "scrollTo"),
+        Output(fe.lipidome_graph.element_id, "figure", allow_duplicate=True),
+        Output(fe.lipid_grid.element_id, "rowData", allow_duplicate=True),
+        Output(fe.lipid_grid.element_id, "selectedRows", allow_duplicate=True),
+        Output(fe.lipid_grid.element_id, "scrollTo", allow_duplicate=True),
         Output(fe.grid_tabs.element_id, "value", allow_duplicate=True),
+        Output(
+            fe.prevent_figure_refresh.element_id,
+            "children",
+            allow_duplicate=True,
+        ),
+        Output(
+            fe.lipidome_graph.element_id, "clickData", allow_duplicate=True
+        ),
         Input(fe.lipidome_graph.element_id, "selectedData"),
         Input(fe.lipidome_graph.element_id, "clickData"),
+        Input(fe.lipid_grid.element_id, "selectedRows"),
         State(fe.lipid_grid.element_id, "rowData"),
+        State(fe.lipidome_graph.element_id, "figure"),
+        State(fe.dimensionality_selection.element_id, "value"),
         prevent_initial_call=True,
     )
-    def highlight_selected_lipids(
-        selected_data: dict, click_data: dict, lipid_records: list[dict]
+    def handle_lipid_selection(
+        selected_data: dict,
+        click_data: dict,
+        selected_rows: dict,
+        lipid_records: list[dict],
+        figure_dict: dict,
+        dimensionality: int,
     ) -> tuple[
+        Figure,
         list[dict],
         dict[str, list[str]],
         dict[str, int],
         str,
+        str,
+        dict | None,
     ]:
-        points: list = (
-            selected_data["points"] if selected_data is not None else []
-        ) + (click_data["points"] if click_data is not None else [])
 
-        if len(points) == 0:
-            raise PreventUpdate
+        # selection on grid: selects to graph by replacement
+        if ctx.triggered_id == fe.lipid_grid.element_id:
+            return (
+                add_annotation(
+                    figure_dict, col_names, selected_rows, dimensionality
+                ),
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                "prevent_figure_refresh",
+                no_update,
+            )
 
-        selected_lipids: list[str] = [
-            point["customdata"][1] for point in points
-        ]
-
-        reordered_records: list[dict] = sorted(
-            lipid_records,
-            key=lambda r: r[col_names.lipid] not in selected_lipids,
-        )
-
-        return (
-            reordered_records,
-            {"ids": selected_lipids},
-            {"rowIndex": 0},
-            fe.grid_tabs.lipid_tab_name,
-        )
+        # selection on graph: selects to grid by addition
+        else:
+            reordered_records, selected_records, scroll_to = select_lipid_grid(
+                col_names,
+                selected_rows,
+                selected_data,
+                click_data,
+                lipid_records,
+            )
+            return (
+                no_update,
+                reordered_records,
+                selected_records,
+                scroll_to,
+                fe.grid_tabs.lipid_tab_name,
+                "prevent_figure_refresh",
+                None,
+            )
 
     clientside_callback(
         ClientsideFunction(
             namespace="clientside",
             function_name="update_figure_config",
         ),
-        Output(fe.lipidome_graph.element_id, "figure"),
-        Output(fe.lipidome_graph.element_id, "config"),
+        Output(fe.lipidome_graph.element_id, "figure", allow_duplicate=True),
+        Output(fe.lipidome_graph.element_id, "config", allow_duplicate=True),
         Input(fe.figure_download_settings.name_input_id, "value"),
         Input(fe.figure_download_settings.file_type_dropdown_id, "value"),
         Input(fe.figure_download_settings.width_input_id, "value"),

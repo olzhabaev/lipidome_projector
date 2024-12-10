@@ -5,7 +5,6 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from importlib.resources import files
 from typing import Self
 
 import pandas as pd
@@ -36,21 +35,11 @@ class InMemoryDataFrameDB(BaseDB):
         :returns: The database.
         """
         return cls.from_files(
-            name=files("lipidome_projector.data").joinpath(
-                config_dict["name"]
-            ),
-            db_path=files("lipidome_projector.data").joinpath(
-                config_dict["db_path"]
-            ),
-            vectors_2d_path=files("lipidome_projector.data").joinpath(
-                config_dict["vectors_2d_path"]
-            ),
-            vectors_3d_path=files("lipidome_projector.data").joinpath(
-                config_dict["vectors_3d_path"]
-            ),
-            smiles_path=files("lipidome_projector.data").joinpath(
-                config_dict["smiles_path"]
-            ),
+            name=config_dict["name"],
+            db_path=Path(config_dict["db_path"]),
+            vectors_2d_path=Path(config_dict["vectors_2d_path"]),
+            vectors_3d_path=Path(config_dict["vectors_3d_path"]),
+            smiles_path=Path(config_dict["smiles_path"]),
         )
 
     @classmethod
