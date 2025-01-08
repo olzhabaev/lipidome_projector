@@ -2,6 +2,7 @@
 
 import logging
 
+from decimal import Decimal, ROUND_DOWN
 from typing import cast
 
 from dash import (
@@ -222,78 +223,72 @@ def reg_graph_settings_callbacks_python(
         Output(fe.min_max_scaling.element_id, "value", allow_duplicate=True),
         Input(fe.sizemode_selection.element_id, "value"),
         Input(fe.lipidome_grid.element_id, "rowData"),
+        State(fe.lipid_grid.element_id, "rowData"),
         prevent_initial_call=True,
     )
     def adjust_sizemode_scaling_ranges(
         sizemode: str,
         lipidome_records: list[dict],
-    ) -> tuple[int, int, int, int, int, int, int, int, tuple[int, int]]:
+        lipid_records: list[dict],
+    ) -> tuple[float, float, float, int, int, int, int, int, tuple[int, int]]:
+        if not lipidome_records or not lipid_records:
+            raise PreventUpdate
 
-        def _adjust_scaling_ranges(
-            sizemode: str, max_value: float
-        ) -> tuple[int, int, int, int, int, int, int, int, tuple[int, int]]:
-            """
-            Workaround for bug in Plotly's marker sizes:
-            https://github.com/plotly/plotly.py/issues/4556
-            """
-            factor_min: int = getattr(
-                fe.linear_scaling, f"factor_min_{sizemode}"
+        if sizemode == "area":
+            factor_min: float = fe.linear_scaling.factor_min_area
+            factor_max: float = fe.linear_scaling.factor_max_area
+            base_min: int = fe.linear_scaling.base_min_area
+            base_max: int = fe.linear_scaling.base_max_area
+            min_max_scaling_min: int = fe.min_max_scaling.min_area
+            min_max_scaling_max: int = fe.min_max_scaling.max_area
+            min_max_scaling_val: tuple[int, int] = (
+                fe.min_max_scaling.value_area
             )
-            factor_max: int = getattr(
-                fe.linear_scaling, f"factor_max_{sizemode}"
+            max_effective_size: float = 10_000
+        elif sizemode == "diameter":
+            factor_min: float = fe.linear_scaling.factor_min_diameter
+            factor_max: float = fe.linear_scaling.factor_max_diameter
+            base_min: int = fe.linear_scaling.base_min_diameter
+            base_max: int = fe.linear_scaling.base_max_diameter
+            min_max_scaling_min: int = fe.min_max_scaling.min_diameter
+            min_max_scaling_max: int = fe.min_max_scaling.max_diameter
+            min_max_scaling_val: tuple[int, int] = (
+                fe.min_max_scaling.value_diameter
             )
-            base_max: int = getattr(fe.linear_scaling, f"base_max_{sizemode}")
-            factor_value: int = getattr(
-                fe.linear_scaling, f"factor_value_{sizemode}"
-            )
-            base_min: int = getattr(fe.linear_scaling, f"base_min_{sizemode}")
-            base_value: int = getattr(
-                fe.linear_scaling, f"base_value_{sizemode}"
-            )
-            min_scaling: int = getattr(fe.min_max_scaling, f"min_{sizemode}")
-            max_scaling: int = getattr(fe.min_max_scaling, f"max_{sizemode}")
-            value_scaling: tuple[int, int] = getattr(
-                fe.min_max_scaling, f"value_{sizemode}"
-            )
-
-            max_result: float = max_value * factor_max + base_max
-
-            factor_max: int = (
-                factor_max
-                if max_result < 10000
-                else int((10000 - base_max) / max_value)
-            )
-
-            return (
-                factor_min,
-                factor_max,
-                factor_value,
-                base_min,
-                base_max,
-                base_value,
-                min_scaling,
-                max_scaling,
-                value_scaling,
-            )
-
-        try:
-            values: list = [
-                value
-                for record in lipidome_records
-                for value in record.values()
-                if isinstance(value, (int, float))
-            ]
-            max_value: float | int = max(values)
-        except ValueError:
-            logger.warning(
-                "Could not adjust maximum factor for linear scaling."
-            )
-            max_value: int = 1
-
-        if sizemode in ["area", "diameter"]:
-            return _adjust_scaling_ranges(sizemode, max_value)
+            max_effective_size: float = 50
         else:
-            raise ValueError(f"Sizemode {sizemode} not supported.")
+            raise ValueError(f"Invalid sizemode: {sizemode}")
+
+        max_abundance_val: float = max(
+            lipidome_record[lipid_record[col_names.lipid]]
+            for lipidome_record in lipidome_records
+            for lipid_record in lipid_records
+            if lipidome_record[lipid_record[col_names.lipid]] is not None
+        )
+
+        max_linear_size: int = max_effective_size - base_max
+
+        factor_max = float(
+            Decimal(max_linear_size / max_abundance_val).quantize(
+                Decimal("1.00"), rounding=ROUND_DOWN
+            )
+        )
+
+        factor_val: float = (factor_min + factor_max) / 2
+
+        base_val: int = int((base_min + base_max) / 2)
+
+        return (
+            factor_min,
+            factor_max,
+            factor_val,
+            base_min,
+            base_max,
+            base_val,
+            min_max_scaling_min,
+            min_max_scaling_max,
+            min_max_scaling_val,
+        )
 
     clientside_callback(
         ClientsideFunction(

@@ -935,20 +935,20 @@ class LinearScaling(ComponentWrapper):
     factor_heading: str = "Factor"
     base_heading: str = "Base"
 
-    factor_min_area: int = 1
+    factor_min_area: int = 0
     factor_max_area: int = 150
     factor_value_area: int = 20
 
-    factor_min_diameter: int = 1
-    factor_max_diameter: int = 50
-    factor_value_diameter: int = 10
+    factor_min_diameter: int = 0
+    factor_max_diameter: int = 10
+    factor_value_diameter: int = 5
 
-    base_min_area: int = 1
+    base_min_area: int = 0
     base_max_area: int = 100
     base_value_area: int = 5
 
-    base_min_diameter: int = 1
-    base_max_diameter: int = 50
+    base_min_diameter: int = 0
+    base_max_diameter: int = 5
     base_value_diameter: int = 5
 
     def gen_component(self) -> html.Div:
@@ -991,8 +991,8 @@ class MinMaxScaling(ComponentWrapper):
     value_area: tuple[int, int] = (50, 5000)
 
     min_diameter: int = 1
-    max_diameter: int = 1000
-    value_diameter: tuple[int, int] = (5, 300)
+    max_diameter: int = 50
+    value_diameter: tuple[int, int] = (5, 30)
 
     def gen_component(self) -> html.Div:
         range_slider: dcc.RangeSlider = dcc.RangeSlider(
