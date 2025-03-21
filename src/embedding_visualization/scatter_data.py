@@ -131,28 +131,25 @@ class ScatterData:
         filter_values: list[str] | None,
         index_filter: pd.Index | None,
         filtered_name: str,
-    ) -> pd.Series | None:
+    ) -> pd.Series:
+        filtered_series: pd.Series = series.copy()
+
         if filter_values is not None:
-            if filtered_name in series.unique():
+            if filtered_name in filtered_series.unique():
                 raise ValueError(
                     f"Can not filter series as {filtered_name} "
                     "is already a value."
                 )
             filter_map: dict[str, str] = {
                 value: (filtered_name if value not in filter_values else value)
-                for value in series.unique()
+                for value in filtered_series.unique()
             }
-            filtered_series: pd.Series | None = series.map(filter_map)
-        else:
-            filtered_series: pd.Series | None = series
+            filtered_series = filtered_series.map(filter_map)
 
         if index_filter is not None:
-            filtered_series: pd.Series | None = filtered_series.copy()
             index_diff: pd.Index = filtered_series.index.difference(
                 index_filter
             )
             filtered_series.loc[index_diff] = filtered_name
-        else:
-            filtered_series: pd.Series | None = series
 
         return filtered_series
