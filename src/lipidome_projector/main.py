@@ -93,7 +93,7 @@ def main() -> None:
     # use_reloader: bool = True
     use_reloader: bool = False
 
-    app.run_server(
+    app.run(
         debug=debug, host="0.0.0.0", port=8050, use_reloader=use_reloader
     )
 
