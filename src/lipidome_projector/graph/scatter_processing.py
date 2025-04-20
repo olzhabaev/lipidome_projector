@@ -389,10 +389,12 @@ def add_annotation(
             selected_lipids_set.remove(lipid[1])
 
     selected_lipids_x: list = [
-        figure["data"][0]["x"][lipid_idx] for lipid_idx in idx_selected_lipids
+        figure["data"][0]["x"]["_inputArray"][str(lipid_idx)]
+        for lipid_idx in idx_selected_lipids
     ]
     selected_lipids_y: list = [
-        figure["data"][0]["y"][lipid_idx] for lipid_idx in idx_selected_lipids
+        figure["data"][0]["y"]["_inputArray"][str(lipid_idx)]
+        for lipid_idx in idx_selected_lipids
     ]
 
     selected_lipid_names: list = [
@@ -425,7 +427,7 @@ def add_annotation(
         figure: Figure = Figure(figure_dict)
 
         selected_lipids_z: list = [
-            figure["data"][0]["z"][lipid_idx]
+            figure["data"][0]["z"]["_inputArray"][str(lipid_idx)]
             for lipid_idx in idx_selected_lipids
         ]
 
