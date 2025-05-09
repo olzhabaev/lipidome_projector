@@ -158,17 +158,23 @@ class MatchingSummary:
             )
         )
 
-        failures: pd.DataFrame = pd.concat(
-            (
-                df
-                for df in [
-                    parsed_no_match_lipids,
-                    original_name_no_match_lipids,
-                    matching_results.filtered_lipids.dataframe,
-                ]
-                if not df.empty
-            ),
-            ignore_index=True,
+        failure_groups: list[pd.DataFrame] = [
+            df
+            for df in (
+                parsed_no_match_lipids,
+                original_name_no_match_lipids,
+                matching_results.filtered_lipids.dataframe,
+            )
+            if not df.empty
+        ]
+
+        failures: pd.DataFrame = (
+            pd.concat(
+                failure_groups,
+                ignore_index=True,
+            )
+            if failure_groups
+            else pd.DataFrame()
         )
 
         return failures

@@ -188,22 +188,30 @@ class ConstraintsDataset:
         else:
             logger.info("Read FA constraints from file-like object.")
 
-        fa_constraints: pd.Series = pd.read_csv(
+        fa_constraints_df: pd.DataFrame = pd.read_csv(
             fa_constraints_csv_input, sep="\t", header=None
-        ).squeeze()
+        )
+
+        fa_constraints: pd.Series = fa_constraints_df[
+            fa_constraints_df.columns[0]
+        ]
 
         fa_constraints.name = "FA"
 
         if isinstance(lcb_constraints_csv_input, Path):
             logger.info(
-                f"Read LCB constraints from: {fa_constraints_csv_input}"
+                f"Read LCB constraints from: {lcb_constraints_csv_input}"
             )
         else:
             logger.info("Read LCB constraints from file-like object.")
 
-        lcb_constraints: pd.Series = pd.read_csv(
+        lcb_constraints_df: pd.DataFrame = pd.read_csv(
             lcb_constraints_csv_input, sep="\t", header=None
-        ).squeeze()
+        )
+
+        lcb_constraints: pd.Series = lcb_constraints_df[
+            lcb_constraints_df.columns[0]
+        ]
 
         lcb_constraints.name = "LCB"
 
