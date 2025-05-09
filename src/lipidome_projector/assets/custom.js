@@ -1,3 +1,7 @@
+window.onbeforeunload = function () {
+    return true;
+}
+
 var currentTooltip = null;  // Variable to keep track of the current tooltip
 
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
