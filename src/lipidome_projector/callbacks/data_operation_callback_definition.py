@@ -234,7 +234,9 @@ def reg_data_operation_callbacks_python(
         return {"update": selected_rows}
 
     @callback(
-        Output(fe.lipidome_grid.element_id, "rowTransaction", allow_duplicate=True),
+        Output(
+            fe.lipidome_grid.element_id, "rowTransaction", allow_duplicate=True
+        ),
         Input(fe.set_color_component.color_scale_button_id, "n_clicks"),
         State(fe.lipidome_grid.element_id, "selectedRows"),
         State(fe.set_color_component.color_scale_dropdown_id, "value"),
@@ -347,7 +349,13 @@ def reg_data_operation_callbacks_python(
     @callback(
         Output(fe.lipidome_grid.element_id, "rowData", allow_duplicate=True),
         Output(fe.difference_grid.element_id, "rowData", allow_duplicate=True),
+        Output(
+            fe.difference_grid.element_id, "selectedRows", allow_duplicate=True
+        ),
         Output(fe.log2fc_grid.element_id, "rowData", allow_duplicate=True),
+        Output(
+            fe.log2fc_grid.element_id, "selectedRows", allow_duplicate=True
+        ),
         Output(fe.last_deleted_store.element_id, "data", allow_duplicate=True),
         Output(
             fe.delete_component.button_undo_id,
@@ -360,7 +368,9 @@ def reg_data_operation_callbacks_python(
         State(fe.lipidome_grid.element_id, "selectedRows"),
         State(fe.lipidome_grid.element_id, "rowData"),
         State(fe.difference_grid.element_id, "rowData"),
+        State(fe.difference_grid.element_id, "selectedRows"),
         State(fe.log2fc_grid.element_id, "rowData"),
+        State(fe.log2fc_grid.element_id, "selectedRows"),
         prevent_initial_call=True,
     )
     def delete_selected_lipidomes(
@@ -368,13 +378,37 @@ def reg_data_operation_callbacks_python(
         selected_rows: list[dict],
         lipidome_records: list[dict],
         difference_records: list[dict],
+        difference_selected_rows: list[dict],
         log2fc_records: list[dict],
+        log2fc_selected_rows: list[dict],
     ) -> (
-        tuple[list[dict], list[dict], list[dict], dict, bool, bool, NoUpdate]
-        | tuple[NoUpdate, NoUpdate, NoUpdate, NoUpdate, NoUpdate, bool, str]
+        tuple[
+            list[dict],
+            list[dict],
+            list[dict],
+            list[dict],
+            list[dict],
+            dict,
+            bool,
+            bool,
+            NoUpdate,
+        ]
+        | tuple[
+            NoUpdate,
+            NoUpdate,
+            NoUpdate,
+            NoUpdate,
+            NoUpdate,
+            NoUpdate,
+            NoUpdate,
+            bool,
+            str,
+        ]
     ):
         if selected_rows is None or len(selected_rows) < 1:
             return (
+                no_update,
+                no_update,
                 no_update,
                 no_update,
                 no_update,
@@ -401,6 +435,17 @@ def reg_data_operation_callbacks_python(
             and record[col_names.to_lipidome] not in deleted_names
         ]
 
+        difference_selected_rows = (
+            [
+                record
+                for record in difference_selected_rows
+                if record[col_names.from_lipidome] not in deleted_names
+                and record[col_names.to_lipidome] not in deleted_names
+            ]
+            if difference_selected_rows is not None
+            else []
+        )
+
         log2fc_records = [
             record
             for record in log2fc_records
@@ -408,10 +453,23 @@ def reg_data_operation_callbacks_python(
             and record[col_names.to_lipidome] not in deleted_names
         ]
 
+        log2fc_selected_rows = (
+            [
+                record
+                for record in log2fc_selected_rows
+                if record[col_names.from_lipidome] not in deleted_names
+                and record[col_names.to_lipidome] not in deleted_names
+            ]
+            if log2fc_selected_rows is not None
+            else []
+        )
+
         return (
             lipidome_records,
             difference_records,
+            difference_selected_rows,
             log2fc_records,
+            log2fc_selected_rows,
             {row["ROW_ID"]: row for row in selected_rows},
             False,
             False,
