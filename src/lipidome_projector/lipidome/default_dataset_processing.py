@@ -4,7 +4,7 @@ import logging
 import tomllib
 
 from dataclasses import dataclass
-from importlib.resources import files
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Self
 
@@ -31,13 +31,39 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class DefaultDatasetConfig:
+class DefaultDatasetCfg:
     name: str
     abundances_csv_path: Path
     lipidome_features_csv_path: Path
     fa_constraints_csv_path: Path
     lcb_constraints_csv_path: Path
     description: str
+
+    @classmethod
+    def from_dict_with_anchor(
+        cls, cfg_dict: dict, anchor: Traversable
+    ) -> Self:
+        """Create a dataset configuration from a dictionary.
+        :param cfg_dict: The dataset configuration.
+        :param anchor: The anchor for the paths.
+        :returns: The dataset configuration.
+        """
+        return cls(
+            name=cfg_dict["name"],
+            abundances_csv_path=Path(
+                str(anchor.joinpath(cfg_dict["abundances_csv_path"]))
+            ),
+            lipidome_features_csv_path=Path(
+                str(anchor.joinpath(cfg_dict["lipidome_features_csv_path"]))
+            ),
+            fa_constraints_csv_path=Path(
+                str(anchor.joinpath(cfg_dict["fa_constraints_csv_path"]))
+            ),
+            lcb_constraints_csv_path=Path(
+                str(anchor.joinpath(cfg_dict["lcb_constraints_csv_path"]))
+            ),
+            description=cfg_dict["description"],
+        )
 
 
 class DefaultLipidomeData:
@@ -52,7 +78,28 @@ class DefaultLipidomeData:
         self._col_names: ColNames = col_names
 
     @classmethod
-    def from_config_file(
+    def from_cfgs(
+        cls,
+        dataset_cfgs: list[DefaultDatasetCfg],
+        database: BaseDB,
+        col_names: ColNames,
+    ) -> Self:
+        datasets: dict[str, LipidomeDataset] = {
+            default_dataset_config.name: cls._gen_lipidome_ds(
+                default_dataset_config, database, col_names
+            )
+            for default_dataset_config in dataset_cfgs
+        }
+
+        dataset_descriptions: dict[str, str] = {
+            default_dataset_config.name: default_dataset_config.description
+            for default_dataset_config in dataset_cfgs
+        }
+
+        return cls(datasets, dataset_descriptions, col_names)
+
+    @classmethod
+    def from_cfg_file(
         cls, path: Path, database: BaseDB, col_names: ColNames
     ) -> Self:
         logger.info(f"Load default lipidome data config file: '{path}'.")
@@ -60,24 +107,34 @@ class DefaultLipidomeData:
         with open(path, "rb") as file:
             config_dict: dict = tomllib.load(file)
 
-        dataset_configs: list[DefaultDatasetConfig] = [
-            DefaultDatasetConfig(**dataset_config_dict)
+        dataset_cfgs: list[DefaultDatasetCfg] = [
+            DefaultDatasetCfg(**dataset_config_dict)
             for dataset_config_dict in config_dict["datasets"]
         ]
 
-        datasets: dict[str, LipidomeDataset] = {
-            default_dataset_config.name: cls._gen_lipidome_ds(
-                default_dataset_config, database, col_names
+        return cls.from_cfgs(dataset_cfgs, database, col_names)
+
+    @classmethod
+    def from_cfg_file_with_anchor(
+        cls,
+        path: Path,
+        anchor: Traversable,
+        database: BaseDB,
+        col_names: ColNames,
+    ) -> Self:
+        logger.info(f"Load default lipidome data config file: '{path}'.")
+
+        with open(path, "rb") as file:
+            config_dict: dict = tomllib.load(file)
+
+        dataset_cfgs: list[DefaultDatasetCfg] = [
+            DefaultDatasetCfg.from_dict_with_anchor(
+                dataset_config_dict, anchor
             )
-            for default_dataset_config in dataset_configs
-        }
+            for dataset_config_dict in config_dict["datasets"]
+        ]
 
-        dataset_descriptions: dict[str, str] = {
-            default_dataset_config.name: default_dataset_config.description
-            for default_dataset_config in dataset_configs
-        }
-
-        return cls(datasets, dataset_descriptions, col_names)
+        return cls.from_cfgs(dataset_cfgs, database, col_names)
 
     # TODO: Extract, this is not the concern of this class.
     def load_default_dataset(self, name: str) -> LipidomeFrontEndData:
@@ -92,32 +149,24 @@ class DefaultLipidomeData:
     @classmethod
     def _gen_lipidome_ds(
         cls,
-        dataset_config: DefaultDatasetConfig,
+        dataset_cfg: DefaultDatasetCfg,
         database: BaseDB,
         col_names: ColNames,
     ) -> LipidomeDataset:
         logger.info(
-            f"Load default and match lipidome dataset '{dataset_config.name}'."
+            f"Load default and match lipidome dataset '{dataset_cfg.name}'."
         )
 
         initial_lipidome_ds: LipidomeDataset = LipidomeDataset.from_csv_input(
-            dataset_config.name,
-            files("lipidome_projector.data").joinpath(
-                dataset_config.abundances_csv_path
-            ),
-            files("lipidome_projector.data").joinpath(
-                dataset_config.lipidome_features_csv_path
-            ),
+            dataset_cfg.name,
+            dataset_cfg.abundances_csv_path,
+            dataset_cfg.lipidome_features_csv_path,
         )
 
         constraints_ds: ConstraintsDataset = (
             ConstraintsDataset.from_constraint_csv_input(
-                files("lipidome_projector.data").joinpath(
-                    dataset_config.fa_constraints_csv_path
-                ),
-                files("lipidome_projector.data").joinpath(
-                    dataset_config.lcb_constraints_csv_path
-                ),
+                dataset_cfg.fa_constraints_csv_path,
+                dataset_cfg.lcb_constraints_csv_path,
             )
         )
 

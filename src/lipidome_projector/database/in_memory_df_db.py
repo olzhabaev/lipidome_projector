@@ -1,10 +1,11 @@
 """Module containing a simple in memory dataframe database class."""
 
 import logging
+import tomllib
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from importlib.resources import files
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Self
 
@@ -19,6 +20,59 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
+class DBCfg:
+    name: str
+    db_path: Path
+    vectors_2d_path: Path
+    vectors_3d_path: Path
+    smiles_path: Path
+
+    @classmethod
+    def from_cfg_file(cls, cfg_path: Path) -> Self:
+        """Create a database configuration from a toml file.
+        :param cfg_path: The path to the toml file.
+        :returns: The database configuration.
+        """
+        with open(cfg_path, "rb") as config_file:
+            cfg_dict: dict = tomllib.load(config_file)
+
+        return cls(**cfg_dict)
+
+    @classmethod
+    def from_cfg_with_anchor(cls, cfg_dict: dict, anchor: Traversable) -> Self:
+        """Create a database configuration from a dictionary.
+        :param cfg_dict: The database configuration.
+        :param anchor: The anchor for the paths.
+        :returns: The database configuration.
+        """
+        return cls(
+            name=cfg_dict["name"],
+            db_path=Path(str(anchor.joinpath(cfg_dict["db_path"]))),
+            vectors_2d_path=Path(
+                str(anchor.joinpath(cfg_dict["vectors_2d_path"]))
+            ),
+            vectors_3d_path=Path(
+                str(anchor.joinpath(cfg_dict["vectors_3d_path"]))
+            ),
+            smiles_path=Path(str(anchor.joinpath(cfg_dict["smiles_path"]))),
+        )
+
+    @classmethod
+    def from_cfg_file_with_anchor(
+        cls, cfg_path: Path, anchor: Traversable
+    ) -> Self:
+        """Create a database configuration from a toml file.
+        :param cfg_path: The path to the toml file.
+        :param anchor: The anchor for the paths.
+        :returns: The database configuration.
+        """
+        with open(cfg_path, "rb") as config_file:
+            cfg_dict: dict = tomllib.load(config_file)
+
+        return cls.from_cfg_with_anchor(cfg_dict, anchor)
+
+
+@dataclass(frozen=True)
 class InMemoryDataFrameDB(BaseDB):
     name: str
     db_df: pd.DataFrame
@@ -30,27 +84,17 @@ class InMemoryDataFrameDB(BaseDB):
     matching_ds: ParsedDataset = field(init=False)
 
     @classmethod
-    def from_config_dict(cls, config_dict: dict) -> Self:
+    def from_cfg(cls, cfg: DBCfg) -> Self:
         """Create a database from a configuration.
-        :param config: The database configuration.
+        :param cfg: The database configuration.
         :returns: The database.
         """
         return cls.from_files(
-            name=files("lipidome_projector.data").joinpath(
-                config_dict["name"]
-            ),
-            db_path=files("lipidome_projector.data").joinpath(
-                config_dict["db_path"]
-            ),
-            vectors_2d_path=files("lipidome_projector.data").joinpath(
-                config_dict["vectors_2d_path"]
-            ),
-            vectors_3d_path=files("lipidome_projector.data").joinpath(
-                config_dict["vectors_3d_path"]
-            ),
-            smiles_path=files("lipidome_projector.data").joinpath(
-                config_dict["smiles_path"]
-            ),
+            name=cfg.name,
+            db_path=cfg.db_path,
+            vectors_2d_path=cfg.vectors_2d_path,
+            vectors_3d_path=cfg.vectors_3d_path,
+            smiles_path=cfg.smiles_path,
         )
 
     @classmethod
