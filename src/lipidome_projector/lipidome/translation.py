@@ -242,6 +242,7 @@ def _gen_abundnace_col_defs(
     abundance_col_defs: list[dict] = [
         {
             "field": col,
+            "cellDataType": "number",
             "filter": "agNumberColumnFilter",
             "floatingFilter": True,
             "filterParams": {
@@ -269,6 +270,7 @@ def _gen_lipidome_features_col_defs(
 ) -> list[dict]:
     lipidome_col_def: dict = {
         "field": lipidome_col_name,
+        "cellDataType": "text",
         "filter": True,
         "floatingFilter": True,
         "filterParams": {
@@ -283,6 +285,7 @@ def _gen_lipidome_features_col_defs(
 
     color_col_def: dict = {
         "field": color_col_name,
+        "cellDataType": "text",
         "filter": True,
         "floatingFilter": True,
         "filterParams": {
@@ -305,6 +308,7 @@ def _gen_lipidome_features_col_defs(
     lipidome_features_col_defs: list[dict] = [
         {
             "field": col,
+            "cellDataType": "text",
             "filter": True,
             "floatingFilter": True,
             "filterParams": {
@@ -353,6 +357,7 @@ def _gen_lipid_col_groups(
     lipid_features_col_defs: list[dict] = [
         {
             "field": name,
+            "cellDataType": "text",
             "filter": True,
             "floatingFilter": True,
             "filterParams": {
@@ -369,6 +374,7 @@ def _gen_lipid_col_groups(
     lipid_vectors_col_defs: list[dict] = [
         {
             "field": name,
+            "cellDataType": "number",
             "filter": "agNumberColumnFilter",
             "floatingFilter": True,
             "filterParams": {
@@ -420,6 +426,7 @@ def _gen_change_col_groups(
     change_val_col_defs: list[dict] = [
         {
             "field": col,
+            "cellDataType": "number",
             "filter": "agNumberColumnFilter",
             "floatingFilter": True,
             "filterParams": {
@@ -438,6 +445,7 @@ def _gen_change_col_groups(
     change_index_col_defs: list[dict] = [
         {
             "field": col,
+            "cellDataType": "text",
             "filter": True,
             "floatingFilter": True,
             "filterParams": {
