@@ -353,9 +353,9 @@ def _add_scaled_abundances(
             df[abundance_col_name],
             scaling_method,
             scaling_params,
-        ).astype(int)
+        )
     else:
-        df[scaled_abundance_col_name] = df[abundance_col_name].astype(int)
+        df[scaled_abundance_col_name] = df[abundance_col_name]
 
 
 def _apply_col_filter(
