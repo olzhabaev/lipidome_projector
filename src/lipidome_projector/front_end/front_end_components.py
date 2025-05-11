@@ -351,9 +351,9 @@ class TestWarning(ComponentWrapper):
     text: str = (
         "'Lipidome Projector' is currently being developed. "
         "This is a preliminary test version of the software. "
-        "It is not intended for production use. "
+        "It is not yet intended for production use. "
         "Bugs are to be expected and some core features "
-        "such as the annotation of lipid markers are not yet active."
+        "may be temporarily unavailable."
     )
     size: Literal["sm", "lg", "xl"] = "xl"
     is_open: bool = True
