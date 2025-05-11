@@ -34,7 +34,7 @@ def perf_vector_matching(
     isomer_vectors_df: pd.DataFrame,
     isomer_smiles: pd.Series,
     lipid_col_name: str,
-) -> tuple[LipidomeDataset, MatchingSummary]:
+) -> tuple[LipidomeDataset | None, MatchingSummary]:
     """Create a lipidome dataset with lipid vectors.
     :param lipidome_ds: Lipidome dataset.
     :param constraints_ds: Constraints dataset.
@@ -54,6 +54,16 @@ def perf_vector_matching(
         constraints_ds,
     )
 
+    matching_summary: MatchingSummary = MatchingSummary(
+        lipidome_ds.name,
+        "DATABASE",
+        lipidome_matching_ds,
+        matching_results,
+    )
+
+    if matching_results.constrained_matches_info.dataframe.empty:
+        return None, matching_summary
+
     lipid_features_df: pd.DataFrame = _gen_lipid_features_df(
         lipidome_ds=lipidome_ds,
         matching_results=matching_results,
@@ -72,13 +82,6 @@ def perf_vector_matching(
         abundance_df=filtered_abundance_df,
         lipidome_features_df=lipidome_ds.lipidome_features_df,
         lipid_features_df=lipid_features_df,
-    )
-
-    matching_summary: MatchingSummary = MatchingSummary(
-        lipidome_ds.name,
-        "DATABASE",
-        lipidome_matching_ds,
-        matching_results,
     )
 
     return vec_lipidome_ds, matching_summary

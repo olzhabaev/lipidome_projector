@@ -17,7 +17,8 @@ from lipidome_projector.lipidome.grid_data import GridDataCollection
 from lipidome_projector.lipidome.session import SessionState
 from lipidome_projector.lipidome.upload_processing import (
     process_lipidome_upload,
-    LipidomeUploadOutput,
+    LipidomeUploadResults,
+    LipidomeUploadFailure,
 )
 
 
@@ -209,54 +210,19 @@ def reg_upload_callbacks_python(
             list,
         ]
     ):
-        lipidome_output: LipidomeUploadOutput = process_lipidome_upload(
-            name=abundances_filename,
-            abundances_contents=abundances_contents,
-            lipidome_features_contents=lipidome_features_contents,
-            fa_constraints_contents=fa_constraints_contents,
-            lcb_constraints_contents=lcb_constraints_contents,
-            database=database,
-            col_names=col_names,
+        lipidome_output: LipidomeUploadResults | LipidomeUploadFailure = (
+            process_lipidome_upload(
+                name=abundances_filename,
+                abundances_contents=abundances_contents,
+                lipidome_features_contents=lipidome_features_contents,
+                fa_constraints_contents=fa_constraints_contents,
+                lcb_constraints_contents=lcb_constraints_contents,
+                database=database,
+                col_names=col_names,
+            )
         )
 
-        if not lipidome_output.processing_failure:
-            return (
-                lipidome_output.lipidome_fe_data.lipidome_records,
-                lipidome_output.lipidome_fe_data.lipidome_records,
-                lipidome_output.lipidome_fe_data.lipidome_col_groups_defs,
-                lipidome_output.lipidome_fe_data.lipid_records,
-                lipidome_output.lipidome_fe_data.lipid_records,
-                lipidome_output.lipidome_fe_data.lipid_col_groups_defs,
-                lipidome_output.lipidome_fe_data.difference_records,
-                lipidome_output.lipidome_fe_data.difference_records,
-                lipidome_output.lipidome_fe_data.difference_col_groups_defs,
-                lipidome_output.lipidome_fe_data.log2fc_records,
-                lipidome_output.lipidome_fe_data.log2fc_records,
-                lipidome_output.lipidome_fe_data.log2fc_col_groups_defs,
-                fe.upload_modal.upload_success_text,
-                lipidome_output.failures_column_defs,
-                lipidome_output.failures_records,
-                lipidome_output.failures_records,
-            )
-        else:
-            return (
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-                fe.upload_modal.upload_failure_text,
-                [],
-                [],
-                [],
-            )
+        return lipidome_output.get_callback_output()
 
     @callback(
         Output(fe.session_download.element_id, "data", allow_duplicate=True),
