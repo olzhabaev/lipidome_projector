@@ -345,31 +345,32 @@ class FullScreenModalStructureImage(FullscreenModal):
 
 
 @dataclass(frozen=True)
-class TestWarning(ComponentWrapper):
-    element_id: str = "test-warning"
-    title: str = "Warning"
+class UsageNotice(ComponentWrapper):
+    element_id: str = "usage-notice"
+    title: str = "Usage Notice"
     text: str = (
-        "'Lipidome Projector' is currently being developed. "
-        "This is a preliminary test version of the software. "
-        "It is not yet intended for production use. "
-        "Bugs are to be expected and some core features "
-        "may be temporarily unavailable."
+        "Lipidome Projector is an academic software project. "
+        "This is a version of the software as described earlier "
+        "(Olzhabaev et al. PLOS Computational Biology 2025, "
+        "https://doi.org/10.1371/journal.pcbi.1012892). "
+        "The software is not yet tested in full extent and might contain bugs. "
+        "Please contact us for any inquiries."
     )
     size: Literal["sm", "lg", "xl"] = "xl"
     is_open: bool = True
 
     def gen_component(self) -> dbc.Modal:
-        test_warning_modal: dbc.Modal = dbc.Modal(
+        usage_notice_modal: dbc.Modal = dbc.Modal(
             [
                 dbc.ModalHeader(dbc.ModalTitle(self.title)),
-                dbc.ModalBody([html.Div(children=self.text)]),
+                dbc.ModalBody([dcc.Markdown(children=self.text, link_target="_blank")]),
             ],
             id=self.element_id,
             size=self.size,
             is_open=self.is_open,
         )
 
-        return test_warning_modal
+        return usage_notice_modal
 
 
 @dataclass(frozen=True)

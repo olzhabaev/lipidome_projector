@@ -44,7 +44,7 @@ class FrontEnd:
         default_factory=fec.LastDeletedStore
     )
 
-    test_warning: fec.TestWarning = field(default_factory=fec.TestWarning)
+    usage_notice: fec.UsageNotice = field(default_factory=fec.UsageNotice)
 
     problem_modal: fec.ProblemModal = field(default_factory=fec.ProblemModal)
 
@@ -960,7 +960,7 @@ class FrontEnd:
 
         last_deleted_store: Component = self.last_deleted_store.get_component()
 
-        test_warning_modal: Component = self.test_warning.get_component()
+        usage_notice_modal: Component = self.usage_notice.get_component()
 
         problem_modal: Component = self.problem_modal.get_component()
 
@@ -1136,7 +1136,7 @@ class FrontEnd:
             className="dbc dbc-ag-grid main-div",
             children=[
                 split_vertical,
-                test_warning_modal,
+                usage_notice_modal,
                 problem_modal,
                 upload_modal,
                 default_dataset_modal,
