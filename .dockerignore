@@ -1,0 +1,13 @@
+.git
+.gitignore
+.dockerignore
+.claude
+.vscode
+
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.cache
+**/*.egg-info
+**/.ipynb_checkpoints
+**/*.ipynb
