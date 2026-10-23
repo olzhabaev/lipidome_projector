@@ -28,6 +28,7 @@ dependencies = [
     "scikit-learn",
     "scipy==1.12.0",
     "umap-learn",
+    "gunicorn",
 ]
 
 [tool.setuptools]
