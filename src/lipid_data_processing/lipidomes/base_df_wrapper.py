@@ -11,7 +11,6 @@ from typing import Any, Literal, Self
 import numpy as np
 import pandas as pd
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 
@@ -172,7 +171,7 @@ class BaseDfWrapper:
 
     @staticmethod
     def _validate_aggregation_operation(
-        operation: Literal["mean", "std", "concat"]
+        operation: Literal["mean", "std", "concat"],
     ) -> None:
         if operation not in ["mean", "std", "concat"]:
             raise ValueError(
@@ -271,7 +270,9 @@ class BaseDfWrapper:
         df: pd.DataFrame, indeces: pd.Index
     ) -> pd.Series:
         return df.loc[indeces].apply(
-            lambda column: " | ".join(column.astype("str").unique()),
+            lambda column: " | ".join(
+                column.fillna("nan").astype("str").unique()
+            ),
             axis="index",
         )
 
