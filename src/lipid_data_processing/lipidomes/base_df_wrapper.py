@@ -271,7 +271,7 @@ class BaseDfWrapper:
     ) -> pd.Series:
         return df.loc[indeces].apply(
             lambda column: " | ".join(
-                column.fillna("nan").astype("str").unique()
+                column.astype("string").fillna("nan").unique()
             ),
             axis="index",
         )
